@@ -1,7 +1,6 @@
 const request = require("request");
 
 module.exports = (req, res) => {
-
     const { user, pass, base_url } = require("../config/index");
     const doc = req.query.cpf;
     const api = `https://${base_url}/API/Query?USERNAME=${user}&PASSWORD=${pass}&SOURCE=BOOKPF&SEARCHKEY=OP=CPF|DOC=${doc}`
@@ -10,7 +9,9 @@ module.exports = (req, res) => {
         const obj = JSON.parse(body);
         const json = JSON.parse(obj.OperationResult);
 
-        json.Entities[0].People.forEach( (value) => {
+        if (obj.ErrorMessage) return res.send( { 'status': false, 'msg': 'invalid document' } );
+        
+        json.Entities[0].People.forEach(value => {
 
             const {
                 Name,
@@ -24,6 +25,8 @@ module.exports = (req, res) => {
             const { RelationshipType } = RelatedPeople[0];
             const { IdNumber } = RelatedPeople[0];
 
+            const { ExtraInformation } = value;
+
             const result = {
                 'name' : Name,
                 'Birthdate' : Birthdate,
@@ -33,9 +36,8 @@ module.exports = (req, res) => {
                 'Birthdate Family' : RelatedBirthdate,
                 'CPF Family' : IdNumber
             }
-
-            res.send(obj.OperationResult);
-            // res.send(result);
+            //res.send(obj.OperationResult);
+            res.send(result);
         });
     });
 };
